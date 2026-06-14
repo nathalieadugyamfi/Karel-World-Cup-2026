@@ -1,0 +1,172 @@
+"""
+
+-----------------------
+Author: Nathalie Serwaa Enam Adu-Gyamfi
+Course: Stanford Code in Place 2026
+Project: Final Capstone 
+
+This program is a comprehensive simulation of the FIFA World Cup 2026.
+It features a 'Karel the Analyst' dashboard, 48-team logic, and 
+interactive strategy sessions where the user acts as the Technical Director.
+"""
+
+import tkinter as tk
+from tkinter import messagebox, simpledialog
+import random
+import time
+
+# --- DATABASE: ALL 48 NATIONS ---
+GROUPS = {
+    "Group A": [["Mexico", 15], ["South Africa", 60], ["South Korea", 22], ["Czechia", 36]],
+    "Group B": [["Canada", 40], ["Italy", 9], ["Qatar", 35], ["Switzerland", 19]],
+    "Group C": [["Brazil", 5], ["Morocco", 12], ["Haiti", 85], ["Scotland", 39]],
+    "Group D": [["USA", 11], ["Paraguay", 56], ["Australia", 24], ["Türkiye", 42]],
+    "Group E": [["Germany", 16], ["Curaçao", 88], ["Ivory Coast", 38], ["Ecuador", 31]],
+    "Group F": [["Netherlands", 7], ["Japan", 18], ["Ukraine", 22], ["Tunisia", 41]],
+    "Group G": [["Belgium", 3], ["Egypt", 30], ["Iran", 20], ["New Zealand", 103]],
+    "Group H": [["Spain", 8], ["Cape Verde", 65], ["Saudi Arabia", 53], ["Uruguay", 11]],
+    "Group I": [["France", 2], ["Senegal", 17], ["Iraq", 58], ["Norway", 47]],
+    "Group J": [["Argentina", 1], ["Algeria", 33], ["Austria", 25], ["Jordan", 71]],
+    "Group K": [["Portugal", 6], ["DR Congo", 63], ["Uzbekistan", 68], ["Colombia", 14]],
+    "Group L": [["England", 4], ["Croatia", 10], ["GHANA", 73], ["Panama", 45]]
+}
+
+class Team:
+    def __init__(self, name, rank):
+        self.name = name
+        self.rank = rank
+        self.points = 0
+        self.goals_for = 0
+        self.goals_against = 0
+        self.played = 0
+
+    def goal_diff(self):
+        return self.goals_for - self.goals_against
+
+class WorldCupApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("WC2026: Karel-Sim by Nathalie Serwaa Enam Adu-Gyamfi")
+        self.root.geometry("1000x750")
+        self.root.configure(bg="#0a2a12") # Soccer Green
+        
+        self.user_team = "GHANA" # Default
+        self.all_teams = {}
+        self.init_data()
+        self.setup_gui()
+        self.welcome_protocol()
+
+    def init_data(self):
+        for grp, teams in GROUPS.items():
+            self.all_teams[grp] = [Team(t[0], t[1]) for t in teams]
+
+    def setup_gui(self):
+        # Header with Nathalie's Name
+        self.header = tk.Frame(self.root, bg="#FFD700", height=80)
+        self.header.pack(fill="x")
+        tk.Label(self.header, text="KAREL WORLD CUP 2026", font=("Impact", 28), bg="#FFD700").pack()
+        tk.Label(self.header, text="By Nathalie Serwaa Enam Adu-Gyamfi", font=("Arial", 10, "italic"), bg="#FFD700").pack()
+
+        # The Karel Screen (The Terminal)
+        self.log_frame = tk.Frame(self.root, bg="#1e1e1e", borderwidth=5, relief="sunken")
+        self.log_frame.pack(expand=True, fill="both", padx=20, pady=20)
+        
+        self.log_text = tk.Text(self.log_frame, bg="#1e1e1e", fg="#00FF00", font=("Courier", 11), height=20)
+        self.log_text.pack(side="left", fill="both", expand=True)
+
+        self.btn_play = tk.Button(self.root, text="KAREL: START TOURNAMENT", command=self.run_tournament, 
+                                  bg="#00843D", fg="white", font=("Arial", 14, "bold"), padx=20, pady=10)
+        self.btn_play.pack(pady=20)
+
+    def welcome_protocol(self):
+        self.karel_speak("System Initialized.")
+        self.karel_speak("Beeper check: Complete.")
+        self.karel_speak("Hello Nathalie! Please select your nation in the popup.")
+        
+        # Change Country Feature
+        choice = simpledialog.askstring("Team Selection", "Which country will you lead to glory?", initialvalue="Ghana")
+        if choice:
+            self.user_team = choice.upper()
+        self.karel_speak(f"Karel is now facing North for team: {self.user_team}")
+
+    def karel_speak(self, text):
+        self.log_text.insert(tk.END, f"> Karel: {text}\n")
+        self.log_text.see(tk.END)
+        self.root.update()
+
+    def run_tournament(self):
+        self.btn_play.config(state="disabled")
+        self.karel_speak("Commencing Group Stage Simulation...")
+        
+        # 1. Simulate all matches
+        for grp, teams in self.all_teams.items():
+            self.karel_speak(f"Analyzing {grp} matches...")
+            for i in range(len(teams)):
+                for j in range(i + 1, len(teams)):
+                    t1, t2 = teams[i], teams[j]
+                    
+                    strat = None
+                    if t1.name == self.user_team or t2.name == self.user_team:
+                        opp = t2.name if t1.name == self.user_team else t1.name
+                        strat = self.ask_tactics(opp)
+                    
+                    s1, s2 = self.calc_score(t1, t2, strat)
+                    self.karel_speak(f"Result: {t1.name} {s1} - {s2} {t2.name}")
+                    time.sleep(0.05)
+
+        self.knockout_phase()
+
+    def ask_tactics(self, opponent):
+        return messagebox.askyesno("Tactical Decision", f"Karel sees {opponent} ahead!\n\nShould we 'Paint the Goal' (Attacking)?\n(Yes = Attack, No = Defensive)")
+
+    def calc_score(self, t1, t2, strat):
+        # The Algorithm: Rank-based weighted randomness
+        p1 = (120 - t1.rank) * (1.3 if strat == True else 1.0)
+        p2 = (120 - t2.rank) * (0.8 if strat == False else 1.0)
+        
+        s1 = random.randint(0, 3) + (1 if p1 > p2 + 20 else 0)
+        s2 = random.randint(0, 3) + (1 if p2 > p1 + 20 else 0)
+        
+        # Update points
+        t1.goals_for += s1; t1.goals_against += s2; t1.played += 1
+        t2.goals_for += s2; t2.goals_against += s1; t2.played += 1
+        if s1 > s2: t1.points += 3
+        elif s2 > s1: t2.points += 3
+        else: t1.points += 1; t2.points += 1
+        return s1, s2
+
+    def knockout_phase(self):
+        # Simplified advancement for showcase: Top 32
+        all_qualified = []
+        for grp, teams in self.all_teams.items():
+            teams.sort(key=lambda x: (x.points, x.goal_diff()), reverse=True)
+            all_qualified.extend(teams[:2]) # Top 2 per group
+        
+        random.shuffle(all_qualified)
+        current_bracket = all_qualified[:32]
+        
+        self.karel_speak("PICKING UP BEEPERS: Entering Knockout Stage!")
+        
+        stages = ["Round of 32", "Round of 16", "Quarters", "Semis", "Final"]
+        for stage in stages:
+            self.karel_speak(f"--- {stage} ---")
+            winners = []
+            for i in range(0, len(current_bracket), 2):
+                t1, t2 = current_bracket[i], current_bracket[i+1]
+                s1, s2 = self.calc_score(t1, t2, None)
+                while s1 == s2: s1 += random.randint(0, 1); s2 += random.randint(0, 1) # No draws
+                
+                win = t1 if s1 > s2 else t2
+                self.karel_speak(f"{t1.name} {s1}-{s2} {t2.name} -> {win.name} Advances!")
+                winners.append(win)
+                time.sleep(0.3)
+            current_bracket = winners
+        
+        final_winner = current_bracket[0].name
+        self.karel_speak(f"KAREL HAS PAINTED THE WORLD FOR {final_winner}!")
+        messagebox.showinfo("WC COMPLETE", f"Nathalie, the winner is {final_winner}!")
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = WorldCupApp(root)
+    root.mainloop()
